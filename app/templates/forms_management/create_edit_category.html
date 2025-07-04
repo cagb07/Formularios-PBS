@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% import "bootstrap_wtf.html" as wtf %}
+
+{% block title %}{{ title }} - Plataforma de Formularios{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>{{ title }} {% if category %}: <small class="text-muted">{{ category.name }}</small>{% endif %}</h1>
+    <hr>
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card">
+                <div class="card-body">
+                    {# Formulario renderizado con el macro quick_form #}
+                    {{ wtf.quick_form(form, button_map={'submit': 'btn btn-primary'}) }}
+
+                    {# Ejemplo de renderizado manual si se necesita más control:
+                    <form method="POST" novalidate>
+                        {{ form.hidden_tag() }} {# CSRF token e ID si es edición #}
+
+                        <div class="mb-3">
+                            {{ form.name.label(class="form-label") }}
+                            {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), placeholder="Ej: Encuestas de Clientes") }}
+                            {% if form.name.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.name.errors %}<span>{{ error }}</span>{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows=3, placeholder="Una breve descripción de para qué se usa esta categoría de formularios.") }}
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.description.errors %}<span>{{ error }}</span>{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mt-4">
+                            {{ form.submit(class="btn btn-primary", value=action + " Categoría") }}
+                            <a href="{{ url_for('forms_management.manage_categories') }}" class="btn btn-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                    #}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

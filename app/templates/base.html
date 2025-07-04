@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Plataforma de Formularios{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    {# <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"> #}
+    <style>
+        body {
+            background-color: #000; /* True Black */
+            color: #e0e0e0; /* Light gray for text */
+        }
+        .navbar {
+            background-color: #1a1a1a !important; /* Darker shade for navbar */
+        }
+        .nav-link, .navbar-brand {
+            color: #c7c7c7 !important;
+        }
+        .nav-link:hover, .navbar-brand:hover {
+            color: #ffffff !important;
+        }
+        .btn-primary {
+            background-color: #0d6efd; /* Bootstrap primary */
+            border-color: #0d6efd;
+        }
+        .btn-primary:hover {
+            background-color: #0b5ed7;
+            border-color: #0a58ca;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            border-color: #dc3545;
+        }
+        .card {
+            background-color: #121212; /* Dark card background */
+            border: 1px solid #333;
+        }
+        .list-group-item {
+            background-color: #1a1a1a;
+            border-color: #333;
+        }
+        .form-control, .form-select {
+            background-color: #222;
+            color: #e0e0e0;
+            border-color: #444;
+        }
+        .form-control:focus, .form-select:focus {
+            background-color: #222;
+            color: #e0e0e0;
+            border-color: #0d6efd; /* Primary color for focus */
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+        .table {
+            border-color: #333;
+        }
+        /* Ajustes para tema oscuro de Bootstrap */
+        [data-bs-theme="dark"] .modal-content {
+            background-color: #121212;
+        }
+        [data-bs-theme="dark"] .dropdown-menu {
+            background-color: #1a1a1a;
+            border-color: #333;
+        }
+        [data-bs-theme="dark"] .dropdown-item {
+            color: #c7c7c7;
+        }
+        [data-bs-theme="dark"] .dropdown-item:hover, [data-bs-theme="dark"] .dropdown-item:focus {
+            color: #ffffff;
+            background-color: #0d6efd;
+        }
+
+        /* Responsive adjustments */
+        .main-content {
+            padding-top: 56px; /* Height of navbar */
+        }
+        @media (min-width: 768px) {
+            .main-content {
+                padding-top: 60px; /* Adjust if navbar height changes */
+            }
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">Formularios Dinámicos</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.index') }}"><i class="bi bi-house-door"></i> Inicio</a>
+                    </li>
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('main.dashboard') }}"><i class="bi bi-speedometer2"></i> Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('forms_management.list_forms') }}"><i class="bi bi-card-list"></i> Ver Formularios</a>
+                        </li>
+                        {% if current_user.has_role('Admin') or current_user.has_role('Editor') %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="formsMgmtDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-pencil-square"></i> Gestión Formularios
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="formsMgmtDropdown">
+                                {% if current_user.has_role('Admin') %}
+                                <li><a class="dropdown-item" href="{{ url_for('forms_management.create_category') }}">Crear Categoría</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('forms_management.manage_categories') }}">Gestionar Categorías</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                {% endif %}
+                                <li><a class="dropdown-item" href="{{ url_for('forms_management.create_form_definition') }}">Crear Plantilla Formulario</a></li>
+                                {% if current_user.has_role('Admin') %}
+                                 <li><a class="dropdown-item" href="{{ url_for('forms_management.manage_form_definitions') }}">Gestionar Plantillas</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('forms_management.view_all_submissions_summary') }}">Ver Todos los Envíos</a></li>
+                                {% endif %}
+                            </ul>
+                        </li>
+                        {% endif %}
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav ms-auto mb-2 mb-md-0">
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.has_role('Admin') %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-person-badge"></i> Admin
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminDropdown">
+                                <li><a class="dropdown-item" href="{{ url_for('auth.manage_users') }}">Gestionar Usuarios</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('auth.manage_roles') }}">Gestionar Roles</a></li>
+                                <!-- Más opciones de admin -->
+                            </ul>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item dropdown">
+                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-person-circle"></i> {{ current_user.email }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <!-- <li><a class="dropdown-item" href="#">Mi Perfil</a></li> -->
+                                <!-- <li><hr class="dropdown-divider"></li> -->
+                                <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Cerrar Sesión <i class="bi bi-box-arrow-right"></i></a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.login') }}">Iniciar Sesión</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.register') }}">Registrarse</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-5 pt-4 main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer mt-auto py-3 bg-dark text-center">
+        <div class="container">
+            <span class="text-muted">Plataforma de Formularios Dinámicos &copy; {{ G.request_start_time.year if G and G.request_start_time else "" }}</span>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% import "bootstrap_wtf.html" as wtf %}
+
+{% block title %}{{ title }} - {{ user.email }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>{{ title }}: <small class="text-muted">{{ user.email }}</small></h1>
+    <hr>
+    <div class="row">
+        <div class="col-md-8 col-lg-6">
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('auth.edit_user', user_id=user.id) }}" novalidate>
+                        {{ form.hidden_tag() }} {# CSRF token #}
+
+                        <div class="mb-3">
+                            {{ form.email.label(class="form-label") }}
+                            {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }}
+                            {% if form.email.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.email.errors %}<span>{{ error }}</span>{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        {# Campos de Nombre y Apellido comentados porque no están en el form actual
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.first_name.label(class="form-label") }}
+                                {{ form.first_name(class="form-control" + (" is-invalid" if form.first_name.errors else "")) }}
+                                {% if form.first_name.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.first_name.errors %}<span>{{ error }}</span>{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.last_name.label(class="form-label") }}
+                                {{ form.last_name(class="form-control" + (" is-invalid" if form.last_name.errors else "")) }}
+                                {% if form.last_name.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.last_name.errors %}<span>{{ error }}</span>{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        #}
+
+                        <div class="mb-3">
+                            {{ form.roles.label(class="form-label") }}
+                            <div class="list-group">
+                                {% for subfield in form.roles %}
+                                <label class="list-group-item">
+                                    {{ subfield(class="form-check-input me-1") }}
+                                    {{ subfield.label.text }}
+                                </label>
+                                {% endfor %}
+                            </div>
+                            {% if form.roles.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.roles.errors %}<span>{{ error }}</span><br>{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-check mb-3">
+                            {{ form.is_approved(class="form-check-input") }}
+                            {{ form.is_approved.label(class="form-check-label") }}
+                        </div>
+
+                        <div class="form-check mb-3">
+                            {{ form.is_active(class="form-check-input") }}
+                            {{ form.is_active.label(class="form-check-label") }}
+                        </div>
+
+                        <div class="mt-4">
+                            {{ form.submit(class="btn btn-primary") }}
+                            <a href="{{ url_for('auth.manage_users') }}" class="btn btn-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h5 class="card-title">Información Adicional</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><strong>ID de Usuario:</strong> {{ user.id }}</li>
+                        <li class="list-group-item"><strong>Registrado:</strong> {{ user.created_at.strftime('%Y-%m-%d %H:%M:%S') if user.created_at else 'N/A' }} UTC</li>
+                        <li class="list-group-item"><strong>Última vez visto:</strong> {{ user.last_seen.strftime('%Y-%m-%d %H:%M:%S') if user.last_seen else 'N/A' }} UTC</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

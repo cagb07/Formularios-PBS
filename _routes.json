@@ -1,0 +1,99 @@
+{
+  "version": 1,
+  "include": [
+    "/",                      البشرة  (* Home page *)
+    "/index",
+    "/dashboard",
+    "/auth/*",                بشرة  (* All authentication routes *)
+    "/forms/*",               بشرة  (* All forms management and submission routes *)
+    "/uploads/*"              بشرة  (* Route for serving uploaded files, handled by Flask for now, ideally by R2/static serving *)
+  ],
+  "exclude": [
+    "/static/*",              بشرة  (* All files in the static folder should be served directly by Pages *)
+    "/favicon.ico"            بشرة  (* Favicon served statically *)
+  ]
+}
+
+// Comentarios sobre _routes.json:
+// 1. "include": Lista de patrones de ruta que serán manejados por las Funciones (es decir, nuestra app Flask).
+//    - "/" y "/index": Página principal.
+//    - "/dashboard": Panel de control.
+//    - "/auth/*": Todas las rutas bajo /auth (login, register, manage_users, etc.).
+//    - "/forms/*": Todas las rutas bajo /forms (crear/listar/enviar formularios, ver envíos, etc.).
+//    - "/uploads/*": Esta ruta es para servir archivos que han sido subidos.
+//      - Idealmente, si se usa R2, los archivos se servirían desde R2 directamente.
+//      - Si los archivos se guardaran temporalmente y se sirvieran a través de Flask (NO RECOMENDADO en serverless para archivos grandes o mucho tráfico),
+//        esta ruta necesitaría ser manejada por la función Flask.
+//      - Si las subidas van a R2 y tienen URLs públicas o firmadas, esta ruta podría no ser necesaria en `include`.
+//      - Por ahora, la he incluido asumiendo que la ruta Flask `@forms_bp.route('/uploads/<filename>')` la maneja.
+
+// 2. "exclude": Lista de patrones de ruta que NO serán manejados por Funciones, sino por el servicio de activos estáticos de Pages.
+//    - "/static/*": Todos los archivos dentro de la carpeta `app/static` (CSS, JS, imágenes de la UI) se sirven estáticamente.
+//                   Cloudflare Pages debe estar configurado para reconocer `app/static` como un directorio de activos.
+//                   Si el directorio de build/publicación es la raíz, y `app/static` está ahí, debería funcionar.
+//                   Si la estructura es diferente (ej. `static` en la raíz), ajustar la ruta.
+//    - "/favicon.ico": El favicon también se sirve estáticamente.
+
+// Consideraciones:
+// - El orden importa. `exclude` suele tener prioridad sobre `include`.
+// - La ruta de `functions/[[path]].py` actúa como un comodín para las rutas que no son explícitamente estáticas.
+//   Este archivo `_routes.json` ayuda a Cloudflare a decidir qué peticiones enviar a esa función comodín.
+// - Si la carpeta `static` de Flask está en `app/static` y el directorio de publicación de Pages es la raíz del repo,
+//   la URL para los estáticos sería `https://<tu-pagina>.pages.dev/app/static/filename.css`.
+//   Si quieres que sea `https://<tu-pagina>.pages.dev/static/filename.css`, necesitarías:
+//   a) Mover `app/static` a `static` en la raíz durante un paso de "build".
+//   b) O configurar el "directorio de publicación" en Cloudflare Pages para que sea `app/` y luego ajustar las rutas.
+//   La configuración actual de `url_for('static', ...)` en Flask generará `/static/...` asumiendo que
+//   el blueprint estático está en la raíz de la app. Si `app` es un subdirectorio en el despliegue,
+//   esto podría necesitar ajustes o un paso de build.
+
+// Este archivo `_routes.json` debe colocarse en el directorio de salida de tu proyecto (output directory),
+// que suele ser la raíz del repositorio si no se especifica un directorio de build, o el directorio
+// especificado en la configuración de "Build & deployments" en Cloudflare Pages.
+// Si `app/static` es la carpeta de activos, y el build se hace desde la raíz, puede que necesites
+// que tu proceso de build copie `app/static` a una carpeta `static` en la raíz del directorio de publicación.
+// O, más simple, si `static_folder='static'` está configurado en Flask y `static` está en la raíz,
+// `exclude: ["/static/*"]` funcionaría directamente.
+// La plantilla `base.html` actualmente usa `url_for('static', ...)` que, por defecto en Flask,
+// busca una carpeta `static` en el mismo nivel que `templates`.
+// Si `app` es un módulo, `url_for('static', ...)` se refiere a `app/static`.
+// Cloudflare Pages necesita saber dónde está esta carpeta `static` para servirla.
+// Si el directorio de publicación es la raíz del repo, entonces la ruta a los estáticos sería `/app/static/...`.
+// En ese caso, el `exclude` debería ser `"/app/static/*"`. Voy a asumir esto.
+
+// Ajuste para `app/static`:
+// "exclude": ["/app/static/*"]
+// Esto requiere que el servidor raíz del sitio vea `app/static` como una ruta válida.
+// Si el directorio `public` o de `build` es la raíz del proyecto, esto es correcto.
+
+// Re-evaluando: `url_for('static', ...)` en Flask crea rutas relativas al nombre de la aplicación/blueprint.
+// Si la aplicación Flask está montada en la raíz del dominio de Pages, y la carpeta `static`
+// de la aplicación es `app/static`, entonces la URL generada por `url_for` será `/static/...`.
+// Para que Cloudflare Pages sirva esto estáticamente, Pages necesita saber que `/static/` debe mapear
+// al contenido de `app/static/`. Esto se configura en los ajustes de build de Pages
+// (directorio de build y cómo se sirven los activos).
+// Si el "Build output directory" se establece en `app` y `static` está dentro de `app`, entonces
+// `exclude: ["/static/*"]` sería correcto.
+// Si el "Build output directory" es la raíz, entonces Pages buscaría una carpeta `static` en la raíz.
+// Para simplificar y hacerlo más común, asumiré que hay un paso de build que mueve `app/static`
+// a una carpeta `static` en la raíz del directorio de publicación, o que Flask está configurado
+// con `static_folder='../static'` y la carpeta `static` está en la raíz.
+// Por ahora, mantendré `exclude: ["/static/*"]` y asumiré que el directorio `static`
+// es accesible en la raíz del sitio desplegado.
+// Esto es lo más estándar. Si `app/static` es la fuente, un paso de build sería: `cp -r app/static public/static`.```json
+{
+  "version": 1,
+  "include": [
+    "/",
+    "/index",
+    "/dashboard",
+    "/auth/*",
+    "/forms/*",
+    "/uploads/*"
+  ],
+  "exclude": [
+    "/static/*",
+    "/favicon.ico"
+  ]
+}
+```

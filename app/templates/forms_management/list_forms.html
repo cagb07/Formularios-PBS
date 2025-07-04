@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Plataforma de Formularios{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>{{ title }}</h1>
+        <div>
+            {% if site_sections %}
+            <div class="dropdown d-inline-block me-2">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="sectionFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    Filtrar por Sección: {{ current_section if current_section else "Todas" }}
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="sectionFilterDropdown">
+                    <li><a class="dropdown-item {% if not current_section %}active{% endif %}" href="{{ url_for('forms_management.list_forms') }}">Todas las Secciones</a></li>
+                    {% for section in site_sections %}
+                    <li><a class="dropdown-item {% if current_section == section %}active{% endif %}" href="{{ url_for('forms_management.list_forms', section=section) }}">{{ section }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            {% if current_user.has_role('Admin') or current_user.has_role('Editor') %}
+            <a href="{{ url_for('forms_management.manage_form_definitions') }}" class="btn btn-info">
+                <i class="bi bi-pencil-square"></i> Gestionar Plantillas
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if forms %}
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for form_def in forms %}
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">{{ form_def.name }}</h5>
+                        {% if form_def.category %}
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                <i class="bi bi-tag"></i> {{ form_def.category.name }}
+                            </h6>
+                        {% endif %}
+                        {% if form_def.section %}
+                             <h6 class="card-subtitle mb-2 text-muted">
+                                <i class="bi bi-folder2-open"></i> Sección: {{ form_def.section }}
+                            </h6>
+                        {% endif %}
+                        <p class="card-text flex-grow-1">
+                            {{ form_def.description|truncate(150, True) if form_def.description else "Este formulario no tiene una descripción detallada." }}
+                        </p>
+                        <div class="mt-auto">
+                             <a href="{{ url_for('forms_management.submit_form', form_def_id=form_def.id) }}" class="btn btn-primary w-100">
+                                <i class="bi bi-input-cursor-text"></i> Rellenar Formulario
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-footer text-muted">
+                        <small>{{ form_def.fields.count() }} campo(s)</small>
+                        {# Podríamos mostrar cuántas veces lo ha enviado el usuario actual si tuviéramos esa info aquí #}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center" role="alert">
+            <h4 class="alert-heading">No hay formularios disponibles</h4>
+            <p>
+                Actualmente no hay formularios activos que coincidan con los filtros seleccionados.
+                {% if current_section %}
+                    Intenta seleccionar <a href="{{ url_for('forms_management.list_forms') }}" class="alert-link">"Todas las Secciones"</a>.
+                {% endif %}
+            </p>
+            {% if current_user.has_role('Admin') or current_user.has_role('Editor') %}
+            <hr>
+            <p class="mb-0">
+                Puedes <a href="{{ url_for('forms_management.create_form_definition') }}" class="alert-link">crear una nueva plantilla de formulario</a> o activar alguna existente.
+            </p>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

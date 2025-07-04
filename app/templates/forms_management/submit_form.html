@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% import "bootstrap_wtf.html" as wtf %} {# Asumiendo que tienes este macro o similar #}
+
+{% block title %}{{ title }} - Plataforma de Formularios{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h2 class="card-title mb-0">{{ form_def.name }}</h2>
+                </div>
+                <div class="card-body">
+                    {% if form_def.description %}
+                        <p class="lead text-muted">{{ form_def.description }}</p>
+                        <hr>
+                    {% endif %}
+
+                    <form method="POST" enctype="multipart/form-data" novalidate>
+                        {{ form.hidden_tag() }} {# CSRF token y form_definition_id #}
+
+                        {% for field_def_model in form_def.fields.order_by(form_def_model.FormField.order) %}
+                            {% set form_field = form[field_def_model.field_name] %}
+
+                            <div class="mb-4 p-3 border rounded field-container field-type-{{ field_def_model.field_type }}">
+                                <label for="{{ form_field.id }}" class="form-label fw-bold">
+                                    {{ form_field.label.text }}
+                                    {% if field_def_model.is_required %}
+                                        <span class="text-danger">*</span>
+                                    {% endif %}
+                                </label>
+
+                                {% if form_field.description %}
+                                    <small class="form-text text-muted d-block mb-2">{{ form_field.description }}</small>
+                                {% endif %}
+
+                                {% if field_def_model.field_type == 'textarea' %}
+                                    {{ form_field(class="form-control" + (" is-invalid" if form_field.errors else ""), rows=4) }}
+                                {% elif field_def_model.field_type == 'boolean' %}
+                                    <div class="form-check">
+                                        {{ form_field(class="form-check-input" + (" is-invalid" if form_field.errors else "")) }}
+                                        {# El label del BooleanField ya está arriba, aquí podemos omitir el form_field.label #}
+                                    </div>
+                                {% elif field_def_model.field_type == 'image_upload' %}
+                                    {{ form_field(class="form-control" + (" is-invalid" if form_field.errors else "")) }}
+                                    <small class="form-text text-muted">Puedes subir múltiples imágenes. Extensiones permitidas: {{ current_app.config.ALLOWED_EXTENSIONS|join(', ') }}. Tamaño máximo por archivo: {{ current_app.config.MAX_CONTENT_LENGTH // 1024 // 1024 }}MB.</small>
+                                {% elif field_def_model.field_type == 'date' %}
+                                     {{ form_field(class="form-control" + (" is-invalid" if form_field.errors else ""), type="date") }}
+                                {% else %} {# text, number, etc. #}
+                                    {{ form_field(class="form-control" + (" is-invalid" if form_field.errors else "")) }}
+                                {% endif %}
+
+                                {% if form_field.errors %}
+                                    <div class="invalid-feedback d-block"> {# d-block para que se muestre bien #}
+                                        {% for error in form_field.errors %}
+                                            <span>{{ error }}</span><br>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+
+                        <div class="mt-4 pt-3 border-top">
+                            {{ form.submit(class="btn btn-primary btn-lg w-100") }}
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-muted">
+                    <p class="mb-0 small">
+                        Los campos marcados con <span class="text-danger">*</span> son obligatorios.
+                        <br>
+                        Tu envío será registrado bajo tu cuenta: {{ current_user.email }}.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+// Script para previsualización de imágenes (opcional, pero mejora la UX)
+document.addEventListener('DOMContentLoaded', function() {
+    const imageUploadFields = document.querySelectorAll('input[type="file"][multiple]'); // Asume que MultipleFileField usa input type="file"
+    imageUploadFields.forEach(inputField => {
+        inputField.addEventListener('change', function(event) {
+            const files = event.target.files;
+            const previewContainerId = 'preview-' + event.target.id;
+            let previewContainer = document.getElementById(previewContainerId);
+
+            if (!previewContainer) {
+                previewContainer = document.createElement('div');
+                previewContainer.id = previewContainerId;
+                previewContainer.classList.add('mt-2', 'row', 'g-2'); // Bootstrap grid classes
+                event.target.closest('.field-container').appendChild(previewContainer);
+            }
+            previewContainer.innerHTML = ''; // Limpiar previsualizaciones anteriores
+
+            if (files) {
+                Array.from(files).forEach(file => {
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const colDiv = document.createElement('div');
+                            colDiv.classList.add('col-auto'); // Auto-ajuste de columnas
+
+                            const img = document.createElement('img');
+                            img.src = e.target.result;
+                            img.classList.add('img-thumbnail');
+                            img.style.maxWidth = '100px'; // Tamaño de la miniatura
+                            img.style.maxHeight = '100px';
+
+                            colDiv.appendChild(img);
+                            previewContainer.appendChild(colDiv);
+                        }
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

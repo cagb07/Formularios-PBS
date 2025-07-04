@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Plataforma de Formularios{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>{{ title }}</h1>
+        <a href="{{ url_for('forms_management.create_form_definition') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Crear Nueva Plantilla
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            {% if form_definitions %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre de la Plantilla</th>
+                            <th>Categoría</th>
+                            <th>Sección</th>
+                            <th>Campos</th>
+                            <th>Activo</th>
+                            <th>Creado por</th>
+                            <th>Creado el</th>
+                            <th>Envíos</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for form_def in form_definitions %}
+                        <tr class="{{ 'table-secondary' if not form_def.is_active else '' }}">
+                            <td>{{ form_def.id }}</td>
+                            <td>
+                                <a href="{{ url_for('forms_management.edit_form_definition', form_def_id=form_def.id) }}">
+                                    {{ form_def.name }}
+                                </a>
+                                {% if form_def.description %}
+                                <small class="d-block text-muted">{{ form_def.description|truncate(50) }}</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ form_def.category.name if form_def.category else 'N/A' }}</td>
+                            <td>{{ form_def.section if form_def.section else 'N/A' }}</td>
+                            <td><span class="badge bg-info">{{ form_def.fields.count() }}</span></td>
+                            <td>
+                                {% if form_def.is_active %}
+                                    <span class="badge bg-success">Sí</span>
+                                {% else %}
+                                    <span class="badge bg-danger">No</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ form_def.creator.email if form_def.creator else 'Sistema' }}</td>
+                            <td>{{ form_def.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                <a href="{{ url_for('forms_management.view_submissions_for_form', form_def_id=form_def.id) }}" class="badge bg-secondary text-decoration-none">
+                                    {{ form_def.submissions.count() }}
+                                </a>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('forms_management.edit_form_definition', form_def_id=form_def.id) }}" class="btn btn-sm btn-outline-primary mb-1" title="Editar Plantilla">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                {% if form_def.is_active %}
+                                <a href="{{ url_for('forms_management.submit_form', form_def_id=form_def.id) }}" class="btn btn-sm btn-outline-success mb-1" title="Rellenar este Formulario">
+                                    <i class="bi bi-input-cursor-text"></i>
+                                </a>
+                                {% endif %}
+
+                                {% if form_def.submissions.count() == 0 %}
+                                <button type="button" class="btn btn-sm btn-outline-danger mb-1" data-bs-toggle="modal" data-bs-target="#deleteFormDefModal-{{ form_def.id }}" title="Eliminar Plantilla">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                <!-- Modal de Confirmación de Eliminación -->
+                                <div class="modal fade" id="deleteFormDefModal-{{ form_def.id }}" tabindex="-1" aria-labelledby="deleteFormDefModalLabel-{{ form_def.id }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="deleteFormDefModalLabel-{{ form_def.id }}">Confirmar Eliminación</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                ¿Estás seguro de que quieres eliminar la plantilla de formulario <strong>{{ form_def.name }}</strong>? Esta acción no se puede deshacer.
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                <form action="{{ url_for('forms_management.delete_form_definition', form_def_id=form_def.id) }}" method="POST" class="d-inline">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <button type="submit" class="btn btn-danger">Eliminar Plantilla</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <button type="button" class="btn btn-sm btn-outline-danger mb-1" title="Esta plantilla tiene envíos asociados y no se puede eliminar. Desactívala si ya no la necesitas." disabled>
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info" role="alert">
+                No hay plantillas de formulario definidas. <a href="{{ url_for('forms_management.create_form_definition') }}">Crea la primera plantilla</a>.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

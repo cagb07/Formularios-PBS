@@ -1,0 +1,97 @@
+{# Este archivo ayuda a renderizar formularios de Flask-WTF con estilos de Bootstrap 5 #}
+
+{% macro quick_form(form, action_url='', method='post', enctype=None, form_type='basic', horizontal_columns=('lg', 2, 8), button_map={}) %}
+    {% if action_url %}
+        <form action="{{ action_url }}" method="{{ method }}"
+            {% if enctype %}enctype="{{ enctype }}"{% endif %}
+            {% if form_type == 'horizontal' %}class="form-horizontal"{% endif %}
+            novalidate>
+    {% else %}
+        <form method="{{ method }}"
+            {% if enctype %}enctype="{{ enctype }}"{% endif %}
+            {% if form_type == 'horizontal' %}class="form-horizontal"{% endif %}
+            novalidate>
+    {% endif %}
+
+    {{ form.hidden_tag() }} {# Incluye CSRF token y otros campos ocultos #}
+
+    {% for field in form if field.widget.input_type != 'hidden' and field.name != 'csrf_token' %}
+        {% if field.type == 'SubmitField' %}
+            {# Los botones de submit se manejan al final #}
+        {% elif field.type == 'BooleanField' %}
+            <div class="mb-3 form-check">
+                {{ field(class="form-check-input" + (" is-invalid" if field.errors else "")) }}
+                {{ field.label(class="form-check-label") }}
+                {% if field.errors %}
+                    <div class="invalid-feedback d-block"> {# d-block para que se muestre con checkboxes #}
+                        {% for error in field.errors %}<span>{{ error }}</span><br>{% endfor %}
+                    </div>
+                {% endif %}
+                {% if field.description %}
+                    <small class="form-text text-muted">{{ field.description }}</small>
+                {% endif %}
+            </div>
+        {% elif field.type == 'RadioField' or (field.type == 'SelectMultipleField' and field.widget.__class__.__name__ == 'ListWidget') %}
+             <div class="mb-3">
+                {{ field.label(class="form-label") }}
+                {% if field.type == 'RadioField' %}
+                    {% for subfield in field %}
+                    <div class="form-check">
+                        {{ subfield(class="form-check-input" + (" is-invalid" if field.errors else "")) }}
+                        {{ subfield.label(class="form-check-label") }}
+                    </div>
+                    {% endfor %}
+                {% elif field.type == 'SelectMultipleField' %} {# Checkboxes para SelectMultipleField #}
+                    <div class="list-group"> {# Opcional: un div para agruparlos visualmente #}
+                    {% for subfield in field %}
+                        <label class="list-group-item d-flex gap-2"> {# O form-check si prefieres #}
+                            {{ subfield(class="form-check-input flex-shrink-0" + (" is-invalid" if field.errors else "")) }}
+                            <span>{{ subfield.label.text }}</span>
+                        </label>
+                    {% endfor %}
+                    </div>
+                {% endif %}
+
+                {% if field.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in field.errors %}<span>{{ error }}</span><br>{% endfor %}
+                    </div>
+                {% endif %}
+                 {% if field.description %}
+                    <small class="form-text text-muted">{{ field.description }}</small>
+                {% endif %}
+            </div>
+        {% else %} {# Campos de texto, email, password, select, etc. #}
+            <div class="mb-3">
+                {{ field.label(class="form-label") }}
+                {% if field.type == 'TextAreaField' %}
+                     {{ field(class="form-control" + (" is-invalid" if field.errors else ""), rows=3) }}
+                {% elif field.type == 'SelectField' %}
+                     {{ field(class="form-select" + (" is-invalid" if field.errors else "")) }}
+                {% else %}
+                    {{ field(class="form-control" + (" is-invalid" if field.errors else "")) }}
+                {% endif %}
+
+                {% if field.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in field.errors %}<span>{{ error }}</span><br>{% endfor %}
+                    </div>
+                {% endif %}
+                {% if field.description %}
+                    <small class="form-text text-muted">{{ field.description }}</small>
+                {% endif %}
+            </div>
+        {% endif %}
+    {% endfor %}
+
+    {# Renderizar botones de submit #}
+    {% for field in form if field.type == 'SubmitField' %}
+        {{ field(class="btn " + button_map.get(field.name, "btn-primary")) }}
+    {% endfor %}
+    </form>
+{% endmacro %}
+
+{% macro render_field(field, form_type='basic', horizontal_columns=('lg', 2, 8), button_map={}) %}
+  {# Esta macro es más granular si se necesita, pero quick_form es más sencilla para la mayoría de los casos #}
+  {# No implementada aquí para mantenerlo simple, quick_form es suficiente por ahora #}
+{% endmacro %}

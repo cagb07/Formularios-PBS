@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Plataforma de Formularios{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>{{ title }}</h1>
+        {% if current_user.has_role('Admin') or current_user.has_role('Editor') %}
+        <a href="{{ url_for('forms_management.manage_form_definitions') }}" class="btn btn-info">
+            <i class="bi bi-pencil-square"></i> Gestionar Plantillas de Formularios
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            {% if form_defs_with_counts %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>ID Plantilla</th>
+                            <th>Nombre de la Plantilla</th>
+                            <th>Categoría</th>
+                            <th>Sección</th>
+                            <th>Total Envíos</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for form_def, count in form_defs_with_counts %}
+                        <tr>
+                            <td>{{ form_def.id }}</td>
+                            <td>
+                                <a href="{{ url_for('forms_management.view_submissions_for_form', form_def_id=form_def.id) }}">
+                                    {{ form_def.name }}
+                                </a>
+                                {% if not form_def.is_active %}
+                                    <span class="badge bg-warning text-dark ms-1">Inactiva</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ form_def.category.name if form_def.category else 'N/A' }}</td>
+                            <td>{{ form_def.section if form_def.section else 'N/A' }}</td>
+                            <td>
+                                <span class="badge {% if count > 0 %}bg-primary{% else %}bg-secondary{% endif %} fs-6">
+                                    {{ count }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('forms_management.view_submissions_for_form', form_def_id=form_def.id) }}" class="btn btn-sm btn-outline-primary" title="Ver Envíos">
+                                    <i class="bi bi-eye"></i> Ver Envíos
+                                </a>
+                                {% if form_def.is_active %}
+                                <a href="{{ url_for('forms_management.submit_form', form_def_id=form_def.id) }}" class="btn btn-sm btn-outline-success ms-1" title="Rellenar este Formulario">
+                                    <i class="bi bi-input-cursor-text"></i> Rellenar
+                                </a>
+                                {% endif %}
+                                 <a href="{{ url_for('forms_management.edit_form_definition', form_def_id=form_def.id) }}" class="btn btn-sm btn-outline-secondary ms-1" title="Editar Plantilla">
+                                    <i class="bi bi-pencil"></i> Editar Plantilla
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info" role="alert">
+                No hay plantillas de formulario en el sistema o ninguna tiene envíos aún.
+                {% if current_user.has_role('Admin') or current_user.has_role('Editor') %}
+                <br>Puedes <a href="{{ url_for('forms_management.create_form_definition') }}" class="alert-link">crear una nueva plantilla de formulario</a>.
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

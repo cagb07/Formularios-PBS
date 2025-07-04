@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Plataforma de Formularios{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>{{ title }}</h1>
+        <a href="{{ url_for('forms_management.create_category') }}" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Crear Nueva Categoría</a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            {% if categories %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre de la Categoría</th>
+                            <th>Descripción</th>
+                            <th>Plantillas de Formulario</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for category in categories %}
+                        <tr>
+                            <td>{{ category.id }}</td>
+                            <td>{{ category.name }}</td>
+                            <td>{{ category.description|truncate(80, True) if category.description else 'N/A' }}</td>
+                            <td>
+                                <span class="badge bg-secondary">{{ category.form_definitions.count() }}</span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('forms_management.edit_category', category_id=category.id) }}" class="btn btn-sm btn-outline-primary" title="Editar Categoría">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                {% if category.form_definitions.count() == 0 %}
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteCategoryModal-{{ category.id }}" title="Eliminar Categoría">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                <!-- Modal de Confirmación de Eliminación -->
+                                <div class="modal fade" id="deleteCategoryModal-{{ category.id }}" tabindex="-1" aria-labelledby="deleteCategoryModalLabel-{{ category.id }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="deleteCategoryModalLabel-{{ category.id }}">Confirmar Eliminación</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                ¿Estás seguro de que quieres eliminar la categoría <strong>{{ category.name }}</strong>? Esta acción no se puede deshacer.
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                <form action="{{ url_for('forms_management.delete_category', category_id=category.id) }}" method="POST" class="d-inline">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <button type="submit" class="btn btn-danger">Eliminar Categoría</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <button type="button" class="btn btn-sm btn-outline-danger" title="Esta categoría tiene plantillas de formulario asociadas y no se puede eliminar." disabled>
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info" role="alert">
+                No hay categorías definidas. <a href="{{ url_for('forms_management.create_category') }}">Crea la primera categoría</a>.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

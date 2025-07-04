@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Plataforma de Formularios{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>{{ title }}</h1>
+        {# <a href="{{ url_for('auth.create_user') }}" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Crear Nuevo Usuario</a> #}
+        {# La creación de usuarios es mediante registro, aquí solo se gestionan #}
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Email</th>
+                            <th>Roles</th>
+                            <th>Aprobado</th>
+                            <th>Activo</th>
+                            <th>Registrado</th>
+                            <th>Última vez visto</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr class="{{ 'table-secondary' if not user.is_active else '' }}">
+                            <td>{{ user.id }}</td>
+                            <td>
+                                {{ user.email }}
+                                {% if user.id == current_user.id %}<span class="badge bg-info ms-1">Tú</span>{% endif %}
+                            </td>
+                            <td>
+                                {% for role in user.roles %}
+                                    <span class="badge {% if role.name == 'Admin' %}bg-danger{% elif role.name == 'Editor' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ role.name }}</span>
+                                {% else %}
+                                    <span class="badge bg-light text-dark">Sin roles</span>
+                                {% endfor %}
+                            </td>
+                            <td>
+                                {% if user.is_approved %}
+                                    <span class="badge bg-success">Sí</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">No</span>
+                                    <form action="{{ url_for('auth.approve_user', user_id=user.id) }}" method="POST" class="d-inline ms-1">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-xs btn-outline-success p-0 px-1" title="Aprobar Usuario">
+                                            <i class="bi bi-check-circle"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if user.is_active %}
+                                    <span class="badge bg-success">Sí</span>
+                                {% else %}
+                                    <span class="badge bg-danger">No</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else 'N/A' }}</td>
+                            <td>{{ user.last_seen.strftime('%Y-%m-%d %H:%M') if user.last_seen else 'N/A' }}</td>
+                            <td>
+                                <a href="{{ url_for('auth.edit_user', user_id=user.id) }}" class="btn btn-sm btn-outline-primary mb-1" title="Editar Usuario">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+
+                                {% if user.id != current_user.id %}
+                                <form action="{{ url_for('auth.toggle_active_user', user_id=user.id) }}" method="POST" class="d-inline mb-1">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm {% if user.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %}"
+                                            title="{{ 'Desactivar' if user.is_active else 'Activar' }} Usuario">
+                                        <i class="bi {% if user.is_active %}bi-pause-circle{% else %}bi-play-circle{% endif %}"></i>
+                                    </button>
+                                </form>
+
+                                <button type="button" class="btn btn-sm btn-outline-danger mb-1" data-bs-toggle="modal" data-bs-target="#deleteUserModal-{{ user.id }}" title="Eliminar Usuario">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                                <!-- Modal de Confirmación de Eliminación -->
+                                <div class="modal fade" id="deleteUserModal-{{ user.id }}" tabindex="-1" aria-labelledby="deleteUserModalLabel-{{ user.id }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="deleteUserModalLabel-{{ user.id }}">Confirmar Eliminación</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                ¿Estás seguro de que quieres eliminar al usuario <strong>{{ user.email }}</strong>? Esta acción no se puede deshacer.
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                <form action="{{ url_for('auth.delete_user', user_id=user.id) }}" method="POST" class="d-inline">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <button type="submit" class="btn btn-danger">Eliminar Usuario</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center">No hay usuarios registrados o que coincidan con la búsqueda.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% if pagination and pagination.pages > 1 %}
+        <div class="card-footer">
+            <nav aria-label="Navegación de usuarios">
+                <ul class="pagination justify-content-center mb-0">
+                    <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('auth.manage_users', page=pagination.prev_num) if pagination.has_prev else '#' }}" tabindex="-1" aria-disabled="true">Anterior</a>
+                    </li>
+                    {% for page_num in pagination.iter_pages() %}
+                        {% if page_num %}
+                            <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('auth.manage_users', page=page_num) }}">{{ page_num }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('auth.manage_users', page=pagination.next_num) if pagination.has_next else '#' }}">Siguiente</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+// Script para Tooltips de Bootstrap (si se usan para los iconos)
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+  return new bootstrap.Tooltip(tooltipTriggerEl)
+})
+</script>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Inicio - Plataforma de Formularios{% endblock %}
+
+{% block content %}
+<div class="px-4 py-5 my-5 text-center">
+    <img class="d-block mx-auto mb-4" src="https://via.placeholder.com/150/000000/FFFFFF/?text=Logo" alt="" width="72" height="auto"> {# Placeholder Logo #}
+    <h1 class="display-5 fw-bold">Plataforma de Formularios Dinámicos</h1>
+    <div class="col-lg-8 mx-auto">
+        <p class="lead mb-4">
+            Bienvenido a nuestra plataforma integral para el registro de usuarios, creación dinámica de formularios y recopilación de datos.
+            Esta aplicación ofrece un robusto sistema de control de acceso basado en roles para una gestión segura y eficiente.
+        </p>
+        <p class="mb-4">
+            <strong>Características Principales:</strong>
+        </p>
+        <ul class="list-unstyled text-start col-lg-6 mx-auto mb-4">
+            <li><i class="bi bi-check-circle-fill text-success"></i> Autenticación y Gestión de Usuarios con aprobación de administrador.</li>
+            <li><i class="bi bi-check-circle-fill text-success"></i> Control de Acceso Basado en Roles (RBAC) granular.</li>
+            <li><i class="bi bi-check-circle-fill text-success"></i> Creación Dinámica de Formularios por administradores.</li>
+            <li><i class="bi bi-check-circle-fill text-success"></i> Soporte para diversos tipos de campos: Texto, Número, Fecha, Área de Texto, Booleano y Subida de Imágenes.</li>
+            <li><i class="bi bi-check-circle-fill text-success"></i> Organización de formularios por categorías y secciones.</li>
+            <li><i class="bi bi-check-circle-fill text-success"></i> Recopilación y visualización de datos enviados.</li>
+            <li><i class="bi bi-check-circle-fill text-success"></i> Exportación de envíos a formato Word (.docx) con imágenes.</li>
+            <li><i class="bi bi-check-circle-fill text-success"></i> Panel de Control (Dashboard) con estadísticas personalizadas.</li>
+            <li><i class="bi bi-check-circle-fill text-success"></i> Interfaz de usuario en español con tema oscuro y diseño responsivo.</li>
+        </ul>
+        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+            {% if not current_user.is_authenticated %}
+            <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg px-4 gap-3">Registrarse</a>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary btn-lg px-4">Iniciar Sesión</a>
+            {% else %}
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary btn-lg px-4 gap-3">Ir al Dashboard</a>
+            <a href="{{ url_for('forms_management.list_forms') }}" class="btn btn-outline-secondary btn-lg px-4">Ver Formularios Disponibles</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="container px-4 py-5" id="featured-3">
+    <h2 class="pb-2 border-bottom">Funcionalidades Destacadas</h2>
+    <div class="row g-4 py-5 row-cols-1 row-cols-lg-3">
+      <div class="feature col">
+        <div class="feature-icon d-inline-flex align-items-center justify-content-center text-bg-primary bg-gradient fs-2 mb-3 p-2 rounded">
+          <i class="bi bi-person-check" style="font-size: 1.5em;"></i>
+        </div>
+        <h3 class="fs-2">Gestión de Usuarios Avanzada</h3>
+        <p>Sistema de roles y permisos flexible, aprobación de cuentas y control total para administradores sobre los usuarios registrados.</p>
+      </div>
+      <div class="feature col">
+        <div class="feature-icon d-inline-flex align-items-center justify-content-center text-bg-primary bg-gradient fs-2 mb-3 p-2 rounded">
+          <i class="bi bi-card-checklist" style="font-size: 1.5em;"></i>
+        </div>
+        <h3 class="fs-2">Formularios Personalizables</h3>
+        <p>Crea formularios a medida sin necesidad de programar, definiendo campos, tipos de datos y si son obligatorios. Organízalos por categorías y secciones para fácil acceso.</p>
+      </div>
+      <div class="feature col">
+        <div class="feature-icon d-inline-flex align-items-center justify-content-center text-bg-primary bg-gradient fs-2 mb-3 p-2 rounded">
+          <i class="bi bi-file-earmark-arrow-down" style="font-size: 1.5em;"></i>
+        </div>
+        <h3 class="fs-2">Recopilación y Exportación</h3>
+        <p>Visualiza los datos enviados de forma estructurada, incluyendo imágenes. Exporta envíos individuales a formato DOCX para informes y análisis offline.</p>
+      </div>
+    </div>
+  </div>
+{% endblock %}

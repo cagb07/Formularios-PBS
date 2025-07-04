@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% import "bootstrap_wtf.html" as wtf %} {# Asumiendo que tienes este macro o similar #}
+
+{% block title %}{{ title }} - Plataforma de Formularios{% endblock %}
+
+{% block extra_head %}
+{{ super() }}
+<style>
+    .field-definition-card {
+        background-color: #222; /* Un poco más claro que el fondo de la tarjeta principal */
+        border: 1px solid #444;
+        margin-bottom: 1rem;
+    }
+    .field-definition-card .card-body {
+        padding: 1rem;
+    }
+    .remove-field-btn {
+        margin-top: 2rem; /* Alinea con el label del primer campo si es posible */
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>{{ title }} {% if form_definition %}: <small class="text-muted">{{ form_definition.name }}</small>{% endif %}</h1>
+    <hr>
+
+    <form method="POST" novalidate id="formDefinitionForm">
+        {{ form.hidden_tag() }} {# CSRF token #}
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                {{ wtf.render_field(form.name, form_type='basic') }}
+            </div>
+            <div class="col-md-6 mb-3">
+                {{ wtf.render_field(form.category_id, form_type='basic') }}
+            </div>
+        </div>
+
+        <div class="mb-3">
+            {{ wtf.render_field(form.description, form_type='basic') }}
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                 {{ wtf.render_field(form.section, form_type='basic') }}
+            </div>
+            <div class="col-md-6 mb-3 align-self-center">
+                 {{ wtf.render_field(form.is_active, form_type='basic') }}
+            </div>
+        </div>
+
+
+        <h3 class="mt-4">Campos del Formulario</h3>
+        <div id="form-fields-list">
+            {% for field_entry in form.fields %}
+            <div class="card field-definition-card" data-field-index="{{ loop.index0 }}">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-11">
+                            <h5>Campo #{{ loop.index }}</h5>
+                            {{ field_entry.form.hidden_tag() }} {# Para subformularios si usan CSRF o IDs #}
+                            <div class="row">
+                                <div class="col-md-6 mb-2">
+                                    {{ wtf.render_field(field_entry.form.field_label) }}
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    {{ wtf.render_field(field_entry.form.field_name) }}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-2">
+                                    {{ wtf.render_field(field_entry.form.field_type) }}
+                                </div>
+                                <div class="col-md-6 mb-2 align-self-center pt-md-3">
+                                    {{ wtf.render_field(field_entry.form.is_required) }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-1 d-flex align-items-center justify-content-center">
+                            <button type="button" class="btn btn-sm btn-outline-danger remove-field-btn" onclick="removeField(this)" title="Eliminar este campo">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% if form.fields.errors %}
+            <div class="alert alert-danger">
+                <strong>Errores en la definición de campos:</strong>
+                <ul>
+                {% for error_list in form.fields.errors.values() %} {# WTForms anida errores de FieldList #}
+                    {% for error in error_list %}
+                        {% for sub_field_name, sub_field_errors in error.items() %}
+                             {% for e in sub_field_errors %}
+                                <li>Error en campo '{{ sub_field_name }}': {{ e }}</li>
+                             {% endfor %}
+                        {% endfor %}
+                    {% endfor %}
+                {% endfor %}
+                </ul>
+                 {% if form.errors.get('fields') %} {# Errores directos en el FieldList, como de validación general #}
+                    {% for error in form.errors.get('fields', []) %}
+                         <li>{{ error }}</li>
+                    {% endfor %}
+                 {% endif %}
+            </div>
+        {% endif %}
+
+
+        <button type="button" id="add-field-btn" class="btn btn-success mt-2 mb-3"><i class="bi bi-plus-circle"></i> Añadir Campo</button>
+
+        <hr>
+        <div class="mt-4">
+            {{ form.submit(class="btn btn-primary", value=action + " Plantilla") }}
+            <a href="{{ url_for('forms_management.manage_form_definitions') }}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+
+    {# Plantilla para nuevos campos (oculta) #}
+    <div id="field-template" style="display: none;">
+        <div class="card field-definition-card" data-field-index="__INDEX__">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-11">
+                        <h5>Campo #__DISPLAY_INDEX__</h5>
+                        {# Campos del subformulario FormFieldDefinitionForm #}
+                        {# Los nombres de los campos deben ser fields-__INDEX__-field_label, etc. #}
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label" for="fields-__INDEX__-field_label">Etiqueta del Campo</label>
+                                <input class="form-control" id="fields-__INDEX__-field_label" name="fields-__INDEX__-field_label" type="text" value="" required>
+                                <small class="form-text text-muted">Texto que verá el usuario (ej: 'Nombre Completo').</small>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label" for="fields-__INDEX__-field_name">Nombre Interno del Campo</label>
+                                <input class="form-control" id="fields-__INDEX__-field_name" name="fields-__INDEX__-field_name" type="text" value="" required pattern="^[a-z0-9_]+$">
+                                <small class="form-text text-muted">Solo minúsculas, números y guiones bajos (ej: 'customer_name').</small>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label" for="fields-__INDEX__-field_type">Tipo de Campo</label>
+                                <select class="form-select" id="fields-__INDEX__-field_type" name="fields-__INDEX__-field_type">
+                                    <option value="text">Texto Corto (Text)</option>
+                                    <option value="textarea">Texto Largo (Textarea)</option>
+                                    <option value="number">Número (Number)</option>
+                                    <option value="date">Fecha (Date)</option>
+                                    <option value="boolean">Booleano (Sí/No)</option>
+                                    <option value="image_upload">Subida de Imagen (Una o Múltiples)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-2 align-self-center pt-md-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" id="fields-__INDEX__-is_required" name="fields-__INDEX__-is_required" type="checkbox" value="y">
+                                    <label class="form-check-label" for="fields-__INDEX__-is_required">Requerido</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                     <div class="col-1 d-flex align-items-center justify-content-center">
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-field-btn" onclick="removeField(this)" title="Eliminar este campo">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addFieldButton = document.getElementById('add-field-btn');
+    const fieldsList = document.getElementById('form-fields-list');
+    const fieldTemplate = document.getElementById('field-template').innerHTML;
+    let fieldIndex = {{ form.fields|length }}; // Empezar el índice desde el número actual de campos
+
+    addFieldButton.addEventListener('click', function() {
+        const newFieldHtml = fieldTemplate
+            .replace(/__INDEX__/g, fieldIndex)
+            .replace(/__DISPLAY_INDEX__/g, fieldIndex + 1);
+
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = newFieldHtml;
+        fieldsList.appendChild(tempDiv.firstElementChild);
+        fieldIndex++;
+        updateFieldNumbers();
+    });
+});
+
+function removeField(button) {
+    const fieldCard = button.closest('.field-definition-card');
+    if (fieldCard) {
+        // No eliminar si es el último campo (WTForms min_entries=1)
+        // Opcional: deshabilitar el botón de borrar si solo queda uno.
+        const allFields = document.querySelectorAll('#form-fields-list .field-definition-card');
+        if (allFields.length <= 1) {
+            alert("Debe haber al menos un campo en el formulario.");
+            return;
+        }
+        fieldCard.remove();
+        updateFieldNumbers(); // Re-numerar los campos restantes
+    }
+}
+
+function updateFieldNumbers() {
+    const allFieldCards = document.querySelectorAll('#form-fields-list .field-definition-card');
+    allFieldCards.forEach((card, index) => {
+        const displayIndexElement = card.querySelector('h5'); // Asume que el H5 contiene "Campo #X"
+        if (displayIndexElement) {
+            displayIndexElement.textContent = `Campo #${index + 1}`;
+        }
+        // Actualizar data-field-index si es necesario para alguna lógica, aunque el name/id ya está bien
+        card.dataset.fieldIndex = index;
+    });
+}
+</script>
+{% endblock %}

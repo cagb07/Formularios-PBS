@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% import "bootstrap_wtf.html" as wtf %}
+
+{% block title %}{{ title }} - Plataforma de Formularios{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>{{ title }} {% if role %}: <small class="text-muted">{{ role.name }}</small>{% endif %}</h1>
+    <hr>
+    <div class="row">
+        <div class="col-md-8 col-lg-7">
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST" novalidate>
+                        {{ form.hidden_tag() }} {# CSRF token #}
+
+                        <div class="mb-3">
+                            {{ form.name.label(class="form-label") }}
+                            {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), placeholder="Ej: Editor Contenido") }}
+                            {% if form.name.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.name.errors %}<span>{{ error }}</span>{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        {#
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), placeholder="Ej: Puede crear y editar contenido") }}
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.description.errors %}<span>{{ error }}</span>{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        #}
+
+                        <div class="form-check mb-3">
+                            {{ form.is_admin_role(class="form-check-input") }}
+                            {{ form.is_admin_role.label(class="form-check-label") }}
+                            <small class="form-text text-muted d-block">Si se marca, los usuarios con este rol tendrán acceso a funciones de administrador (equivalente a `is_admin()`).</small>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.permissions.label(class="form-label") }}
+                            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3">
+                                {% for subfield in form.permissions %}
+                                <div class="col">
+                                    <div class="form-check">
+                                        {{ subfield(class="form-check-input") }}
+                                        {{ subfield.label(class="form-check-label") }}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% if form.permissions.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.permissions.errors %}<span>{{ error }}</span><br>{% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if not form.permissions.choices %}
+                            <div class="alert alert-warning mt-2" role="alert">
+                                No hay permisos definidos en el sistema. Un administrador debería <a href="{{ url_for('auth.init_rbac') }}">inicializar los permisos base</a>.
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mt-4">
+                            {{ form.submit(class="btn btn-primary", value=action + " Rol") }}
+                            <a href="{{ url_for('auth.manage_roles') }}" class="btn btn-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% if role %}
+        <div class="col-md-4 col-lg-5">
+            <div class="card">
+                <div class="card-header">Usuarios con este Rol ({{ role.users.count() }})</div>
+                <div class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+                    {% for user in role.users.limit(10) %}
+                    <a href="{{ url_for('auth.edit_user', user_id=user.id) }}" class="list-group-item list-group-item-action">{{ user.email }}</a>
+                    {% else %}
+                    <li class="list-group-item">Ningún usuario tiene asignado este rol actualmente.</li>
+                    {% endfor %}
+                    {% if role.users.count() > 10 %}
+                    <li class="list-group-item text-center text-muted">... y {{role.users.count() - 10 }} más.</li>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
