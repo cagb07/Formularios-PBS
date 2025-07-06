@@ -7,7 +7,7 @@ Werkzeug==2.3.7 # Por seguridad y compatibilidad con Flask
 bcrypt==4.0.1
 python-dotenv==1.0.0
 python-docx==0.8.11 # Para exportar a Word
-Pillow==10.4.0# Para manejo de imágenes
+Pillow==10.4.0 # Para manejo de imágenes (actualizado para compatibilidad de build)
 Flask-Migrate==4.0.4 # Opcional, para migraciones de base de datos con Alembic
 email_validator==2.0.0 # Para validación de email en WTForms
 # Para Cloudflare Workers (esto podría necesitar ajustes específicos)
