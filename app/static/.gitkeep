@@ -1,0 +1,5 @@
+# Este archivo está aquí para asegurar que el directorio app/static no esté vacío.
+# Esto previene errores con comandos como `cp app/static/* ...` en scripts de build
+# si la carpeta app/static no contiene otros archivos.
+# Puedes eliminar este archivo si añades otros archivos estáticos (CSS, JS, imágenes)
+# a este directorio.

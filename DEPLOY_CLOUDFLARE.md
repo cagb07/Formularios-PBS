@@ -104,12 +104,12 @@ El archivo `functions/[[path]].py` es el handler que Cloudflare Pages ejecutará
         # functions/[[path]].py
         import os
         from app import create_app
-        
+
         # Asegúrate que create_app() puede acceder a los bindings pasados por el contexto
         # si es necesario para configurar la base de datos o R2 en tiempo de inicialización.
         # Esto podría requerir modificar create_app o inicializar la app dentro de onRequest.
         app = create_app(os.getenv('FLASK_CONFIG_CLOUDFLARE') or 'production')
-        
+
         # Si el runtime de Cloudflare Pages recoge 'app' automáticamente,
         # la función onRequest puede no ser estrictamente necesaria o se simplifica.
         ```
@@ -119,13 +119,13 @@ El archivo `functions/[[path]].py` es el handler que Cloudflare Pages ejecutará
         import os
         from app import create_app
         # from alguna_libreria_adaptadora_cf_wsgi import Adapter
-        
+
         flask_app = create_app(os.getenv('FLASK_CONFIG_CLOUDFLARE') or 'production')
         # adapter = Adapter(flask_app) # Inicializar el adaptador
-        
+
         # def onRequest(context):
         #     # Aquí el adaptador usaría flask_app y context (que tiene request, env, etc.)
-        #     # return adapter.handle(context.request, context.env) 
+        #     # return adapter.handle(context.request, context.env)
         #     # El retorno debe ser un objeto Response compatible con Cloudflare.
         #     # Este es un placeholder; el adaptador real es crucial.
         #     return Response("Adaptador WSGI para Flask necesita implementación.", status=501) # Necesitas importar o usar Response de CF
@@ -149,8 +149,8 @@ El archivo `functions/[[path]].py` es el handler que Cloudflare Pages ejecutará
     *   En `app/__init__.py`, al crear la aplicación Flask, asegúrate de que `static_folder` apunte a esta ubicación y `static_url_path` sea el correcto:
         ```python
         # En app/__init__.py dentro de create_app()
-        app = Flask(__name__, 
-                    instance_relative_config=True, 
+        app = Flask(__name__,
+                    instance_relative_config=True,
                     static_folder='static_root',  # Nombre de la carpeta creada en el build
                     static_url_path='/static')   # URL base para los estáticos
         ```

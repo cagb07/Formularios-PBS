@@ -115,33 +115,37 @@ Esta aplicación web, construida con Flask, proporciona una plataforma integral 
 
 ## Despliegue en Cloudflare Pages
 
-Esta aplicación está estructurada para ser desplegada en Cloudflare Pages con las siguientes consideraciones:
+Esta aplicación está estructurada para ser desplegable en Cloudflare Pages utilizando Funciones Python para el backend, Cloudflare D1 para la base de datos, y Cloudflare R2 para el almacenamiento de archivos (como imágenes subidas).
 
-1.  **Fuente de Datos (Cloudflare D1):**
-    *   La aplicación está configurada para usar Cloudflare D1 si se proporciona la variable de entorno `D1_DATABASE_URL`.
-    *   Deberás crear una base de datos D1 en tu panel de Cloudflare y obtener su URL de conexión (o binding).
-    *   Las migraciones de esquema iniciales (creación de tablas) se deben realizar contra D1 (ej. usando `wrangler d1 execute`). Los comandos `flask init-db` están pensados para SQLAlchemy y podrían necesitar adaptarse o ejecutarse en un entorno que pueda conectar a D1 con las herramientas adecuadas si el driver SQLAlchemy para D1 no es directo.
+Para una guía detallada paso a paso sobre el despliegue, consulta el archivo:
+**[Guía Detallada de Despliegue en Cloudflare Pages](DEPLOY_CLOUDFLARE.md)**
 
-2.  **Almacenamiento de Archivos (Cloudflare R2):**
-    *   Para la subida de imágenes, la aplicación está diseñada para usar Cloudflare R2 si se configuran las variables de entorno correspondientes (`R2_BUCKET_NAME`, `R2_ACCOUNT_ID`, etc.).
-    *   Deberás crear un bucket R2 y configurar sus permisos (ej. para acceso público a los objetos si es necesario).
-    *   Si R2 no está configurado, la aplicación intentará usar el directorio local `app/static/uploads/` (esto **no funcionará** correctamente en el entorno serverless de Cloudflare Pages para persistencia).
+A continuación, se resumen los puntos clave y consideraciones:
 
-3.  **Configuración en Cloudflare Pages:**
-    *   Conecta tu repositorio Git a Cloudflare Pages.
-    *   **Configuración de Build:**
-        *   Framework Preset: `None` (o `Python` si está disponible y es adecuado).
-        *   Build command: `pip install -r requirements.txt && # (opcional) Comandos para mover estáticos si es necesario`
-        *   Build output directory: `/` (la raíz del repositorio, o donde estén `_routes.json` y `functions/`).
-        *   Root directory: `/` (o donde esté el `requirements.txt`).
-    *   **Variables de Entorno:** Configura todas las variables necesarias en el panel de Cloudflare Pages (Secrets para `SECRET_KEY`, `ADMIN_PASSWORD`, credenciales de R2, etc., y variables planas para `FLASK_CONFIG_CLOUDFLARE='production'`, `ADMIN_EMAIL`, `D1_DATABASE_URL`, `R2_BUCKET_NAME`, etc.).
-    *   **Compatibilidad de Funciones:** Asegúrate de que la compatibilidad con `python` esté habilitada para las funciones si es necesario.
+1.  **Servicios de Cloudflare Necesarios:**
+    *   **Cloudflare Pages:** Para el hosting del frontend y la ejecución de las Funciones Python.
+    *   **Cloudflare D1:** Como base de datos SQL (el esquema debe crearse manualmente).
+    *   **Cloudflare R2:** Para el almacenamiento de archivos subidos (ej. imágenes de formularios).
 
-4.  **Handler de Funciones (`functions/[[path]].py`):**
-    *   Este archivo está destinado a ser el punto de entrada para las solicitudes dinámicas. Requiere un adaptador WSGI adecuado para conectar las solicitudes de Cloudflare Functions con la aplicación Flask. La implementación actual en `functions/[[path]].py` es un placeholder y necesitará ser completada con un adaptador funcional o según las directrices de Cloudflare para servir aplicaciones WSGI Python.
+2.  **Configuración del Proyecto en Pages:**
+    *   Conectar el repositorio Git.
+    *   Establecer un comando de build (ej. `pip install -r requirements.txt && mkdir -p static_root && cp -r app/static/* static_root/`).
+    *   Configurar el directorio de salida (generalmente la raíz del proyecto).
+    *   Definir variables de entorno para la configuración de Flask, credenciales de R2 (si se usa `boto3`), y la clave secreta.
 
-5.  **Enrutamiento (`_routes.json`):**
-    *   El archivo `_routes.json` en la raíz del directorio de publicación define qué rutas son manejadas por las Funciones (`[[path]].py`) y cuáles son servidas como activos estáticos. Asegúrate de que la carpeta `static` de la aplicación sea servida correctamente.
+3.  **Bindings de Funciones:**
+    *   Configurar bindings en Pages para D1 (ej. `DB`) y R2 (ej. `MY_R2_BUCKET`) para permitir que las Funciones Python accedan a estos servicios de forma segura.
+
+4.  **Adaptador WSGI:**
+    *   El archivo `functions/[[path]].py` actúa como el handler. Se necesita un adaptador WSGI para que las solicitudes de Cloudflare Functions sean procesadas por la aplicación Flask. La implementación de este adaptador es crucial y depende de las recomendaciones de Cloudflare para Python.
+
+5.  **Enrutamiento y Archivos Estáticos:**
+    *   El archivo `_routes.json` gestiona qué solicitudes van a las Funciones y cuáles sirven archivos estáticos.
+    *   Los archivos estáticos de la aplicación (CSS, JS) deben ser copiados a una ubicación accesible por Cloudflare Pages durante el build (ej. una carpeta `static_root`) y la aplicación Flask configurada para usar esta ruta.
+
+6.  **Inicialización de Datos en D1:**
+    *   El esquema de la base de datos D1 debe crearse manualmente (ej. usando `wrangler d1 execute`).
+    *   Los datos iniciales (roles, permisos, usuario admin) deben insertarse en D1, ya sea mediante `wrangler` o un endpoint temporal protegido en la aplicación.
 
 ## Consideraciones Adicionales
 
